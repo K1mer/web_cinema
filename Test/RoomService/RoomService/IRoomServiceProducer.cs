@@ -8,12 +8,12 @@ namespace RoomService
 {
     internal interface IRoomServiceProducer
     {
-        void Stop(List<Guid> connectionIds);
+        void Stop();
 
-        void Start(List<Guid> connectionIds);
+        void Start();
 
         void UploadFilm(string filmName);
 
-        void UploadChunk(List<Guid> connectionIds, byte[] chunk)
+        void UploadChunk(byte[] chunk);
     }
 }

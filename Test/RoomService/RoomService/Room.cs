@@ -30,27 +30,23 @@ namespace RoomService
 
         public void Stop()
         {
-            var connectionIds = GetCopyConnectionIds();
-            _producer.Stop(connectionIds);
+            _producer.Stop();
         }
 
         public void Start()
         {
-            var connectionIds = GetCopyConnectionIds();
-            _producer.Start(connectionIds);
+            _producer.Start();
         }
 
         public void Start(string filmName)
         {
             _producer.UploadFilm(filmName);
-            var connectionIds = GetCopyConnectionIds();
-            _producer.Start(connectionIds);
+            _producer.Start();
         }
 
         public void UploadChunk(byte[] chunk)
         {
-            var connectionIds = GetCopyConnectionIds();
-            _producer.UploadChunk(connectionIds, chunk);
+            _producer.UploadChunk( chunk);
         }
 
         private List<Guid> GetCopyConnectionIds()
