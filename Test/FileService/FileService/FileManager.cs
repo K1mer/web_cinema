@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FileService
 {
-    internal class FileManager
+    internal class FileManager: IFileServiceConsumer
     {
         private readonly string _dirFiles;
         private readonly IFileServiceProducer _fileServiceProducer;
