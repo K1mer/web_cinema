@@ -1,14 +1,13 @@
 ﻿using Confluent.Kafka;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace FileService
 {
     internal class KafkaConsumersManager
     {
-        private readonly IConsumer<Ignore, string> _consumerSelectedFileName;
-        private readonly IConsumer<Ignore, NewFileParameters> _consumerNewFile;
-        private readonly IConsumer<Ignore, bool> _consumerGetFileNames;
-
         private readonly IFileServiceConsumer _consumer;
+        private readonly ConsumerConfig _config;
 
         private const int _timeOutMillisec = 100;
 
@@ -22,31 +21,33 @@ namespace FileService
                 GroupId = groupName,
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-
-            _consumerSelectedFileName = new ConsumerBuilder<Ignore, string>(config).Build();
-            _consumerNewFile = new ConsumerBuilder<Ignore, NewFileParameters>(config).Build();
-            _consumerGetFileNames = new ConsumerBuilder<Ignore, bool>(config).Build();
-
-            _consumerSelectedFileName.Subscribe("topic123");
-            _consumerNewFile.Subscribe("topic124");
-            _consumerGetFileNames.Subscribe("topic125");
+            _config = config;
 
             var taskConsumeSelectedFileName = new Task(ConsumeSelectedFileName);
             var taskConsumeNewFile = new Task(ConsumeNewFile);
             var taskConsumeGetFileNames = new Task(ConsumeGetFileNames);
+
+            taskConsumeSelectedFileName.Start();
+            taskConsumeNewFile.Start();
+            taskConsumeGetFileNames.Start();
         }
       
-
         private void ConsumeSelectedFileName()
         {
             while (true)
             {
-                var message = _consumerSelectedFileName.Consume(_timeOutMillisec);
-                var fileName = message.Message.Value;
-                if(fileName != null)
+                using(var consumerSelectedFileName = new ConsumerBuilder<Ignore, string>(_config).Build())
                 {
-                    _consumer.DownloadFile(fileName);
-                    _consumerSelectedFileName.Commit(message);
+                    consumerSelectedFileName.Subscribe("topic123");
+                    var message = consumerSelectedFileName.Consume(_timeOutMillisec);
+                    if (message == null)
+                        continue;
+                    var fileName = message.Message.Value;
+                    if (fileName != null)
+                    {
+                        _consumer.DownloadFile(fileName);
+                        consumerSelectedFileName.Commit(message);
+                    }
                 }
             }
         }
@@ -55,12 +56,19 @@ namespace FileService
         {
             while (true)
             {
-                var message = _consumerNewFile.Consume(_timeOutMillisec);
-                var fileParameters = message.Message.Value;
-                if (fileParameters != null)
+                using (var consumerNewFile = new ConsumerBuilder<Ignore, string>(_config).Build())
                 {
-                    _consumer.UploadFile(fileParameters.Bytes, fileParameters.FileName);
-                    _consumerNewFile.Commit(message);
+                    consumerNewFile.Subscribe("topic124");
+                    var message = consumerNewFile.Consume(_timeOutMillisec);
+                    if (message == null)
+                        continue;
+                    var json = message.Message.Value;
+                    var fileParameters = JsonSerializer.Deserialize<NewFileParameters>(json);
+                    if (fileParameters != null)
+                    {
+                        _consumer.UploadFile(fileParameters.Bytes, fileParameters.FileName);
+                        consumerNewFile.Commit(message);
+                    }
                 }
             }
         }
@@ -69,12 +77,18 @@ namespace FileService
         {
             while (true)
             {
-                var message = _consumerGetFileNames.Consume(_timeOutMillisec);
-                var flag = message.Message.Value;
-                if (flag)
+                using(var consumerGetFileNames = new ConsumerBuilder<Ignore, int>(_config).Build())
                 {
-                    _consumer.GetFileNames();
-                    _consumerGetFileNames.Commit(message);
+                    consumerGetFileNames.Subscribe("topic125");
+                    var message = consumerGetFileNames.Consume(_timeOutMillisec);
+                    if (message == null)
+                        continue;
+                    var flag = message.Message.Value;
+                    if (flag != null)
+                    {
+                        _consumer.GetFileNames();
+                        consumerGetFileNames.Commit(message);
+                    }
                 }
             }
         }
