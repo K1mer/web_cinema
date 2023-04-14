@@ -8,13 +8,16 @@ export const Video: React.FC = () => {
 
     useEffect( () => { CinemaService.startTransmition() }, [] );
 
-    const videoPauseHandler: ReactEventHandler<HTMLVideoElement> = ( event ) => {
+    const videoPauseHandler: ReactEventHandler<HTMLVideoElement> = () => {
+        CinemaService.PauseVideo();
     }
 
-    const videoPlayHandler: ReactEventHandler<HTMLVideoElement> = ( event ) => {
+    const videoPlayHandler: ReactEventHandler<HTMLVideoElement> = () => {
+        CinemaService.PlayVideo();
     }
 
     const videoTimeUpdateHandler: ReactEventHandler<HTMLVideoElement> = ( event ) => {
+        CinemaService.SetTimecode( event.currentTarget.currentTime );
     }
 
     return <div className = 'video-container'>

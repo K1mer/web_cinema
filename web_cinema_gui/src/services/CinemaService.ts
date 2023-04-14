@@ -12,9 +12,18 @@ enum ResponseCode {
     UserLeft
 }
 
+/** Сервер. */
+const server = `http://${ window.location.hostname }:80/`;
+
 export class CinemaService {
     static setVideoSourceSetter( setVideoSrc: VideoSourceChangeAction ): void {
         this._sourceChangeReaction = setVideoSrc;
+
+        sendRequest( 
+            server + 'createFolder', 
+            'POST', 
+            JSON.stringify({ test: 'Wello Horld!' }) 
+        );
     }
 
     static setUserAmountSetter( setUserAmount: UserAmountChangeAction ): void {
@@ -22,7 +31,7 @@ export class CinemaService {
     }
 
     static async startTransmition(): Promise<void> {
-        this.socket = new WebSocket( 'ws://' + window.location.hostname + ':8080' )
+        this.socket = new WebSocket( `ws://${ window.location.hostname }:80` );
 
         this.socket.onopen = function() {
             console.log( 'Websocket connection is on!' );
@@ -50,16 +59,31 @@ export class CinemaService {
 // https://learn.javascript.ru/websocket#prostoy-primer
 // https://developer.mozilla.org/en-US/docs/Web/Guide/Audio_and_video_delivery/Live_streaming_web_audio_and_video
 
-    static async SetTimecode( timecode: number ): Promise<void> {
+    static SetTimecode( timecode: number ): void {
+        this.socket?.send( 'timecode' + timecode );
     }
 
-    static async PauseVideo(): Promise<void> {
+    static PauseVideo(): void {
+        this.socket?.send( 'pause' );
     }
 
-    static async PlayVideo(): Promise<void> {
+    static PlayVideo(): void {
+        this.socket?.send( 'play' );
     }
 
-    static async SendVideoFile(): Promise<void> {
+    static SendVideoFile( timecode: number ): void {
+    }
+
+    private static async OnNewVideo(): Promise<void> {
+    }
+ 
+    private static async OnPlay(): Promise<void> {
+    }
+
+    private static async OnPause(): Promise<void> {
+    }
+
+    private static async OnChangeTimecode(): Promise<void> {
     }
 
     private static async OnUserJoin(): Promise<void> {
@@ -73,4 +97,28 @@ export class CinemaService {
     private static _userAmountChangeReaction: UserAmountChangeAction;
 
     private static socket: WebSocket;
+}
+
+/** 
+ * Простая shortcut функция посылки запроса и обработки приходящий данных.
+ * @param url - URL запроса.
+ * @param [method = 'GET'] - метод запроса.
+ * @param [body] - тело запроса (если необходимо).
+ * */
+const sendRequest = async ( url: string, method: string = 'GET', body?: BodyInit ) => {
+    const response = await fetch( url, {
+        method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body
+    });
+
+    const data = await response.json();
+
+    if( !data?.success ) {
+        throw new Error( 'No data or operation is not success.' );
+    };
+
+    return data;
 }
