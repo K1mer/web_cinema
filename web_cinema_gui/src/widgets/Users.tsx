@@ -1,4 +1,7 @@
+/** Модуль экспортирует компонент с счётчиком пользователей в комнате. */
+
 import { useState } from 'react';
+
 import { CinemaService } from '../services';
 
 

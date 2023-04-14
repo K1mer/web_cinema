@@ -1,4 +1,7 @@
+/** Модуль экспортирует компонент с видео-проигрывателем. */
+
 import { ReactEventHandler, useEffect, useState } from 'react';
+
 import { CinemaService } from '../services';
 
 
