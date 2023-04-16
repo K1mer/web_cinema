@@ -1,35 +1,66 @@
 /** Модуль экспортирует компонент с видео-проигрывателем. */
 
-import { ReactEventHandler, useEffect, useState } from 'react';
+import { ReactEventHandler, useEffect, useRef, useState } from 'react';
 
 import { CinemaService } from '../services';
 
 
 export const Video: React.FC = () => {
-    const [ src, setSrc ] = useState<string>( '' );
-    CinemaService.setVideoSourceSetter( setSrc );
+    const videoRef = useRef<HTMLVideoElement>();
 
-    useEffect( () => { CinemaService.startTransmition() }, [] );
+    const [ paused, setPause ] = useState<boolean>();
+
+    const unpauseVideo = () => {
+        setPause( false );
+        videoRef.current?.play();
+    }
+
+    const pauseVideo = () => {
+        setPause( true );
+        videoRef.current?.pause();
+    }
+
+    const setVideoTimecode = ( timecode: number ) => {
+        if( videoRef.current && videoRef.current.currentTime !== timecode ) {
+            videoRef.current.currentTime = timecode;
+        }
+    }
+
+    CinemaService.setVideoStateHandlers( unpauseVideo, pauseVideo, setVideoTimecode );
+
+    useEffect( () => {
+        setPause( true );
+        CinemaService.startTransmition() 
+    }, [] );
 
     const videoPauseHandler: ReactEventHandler<HTMLVideoElement> = () => {
-        CinemaService.PauseVideo();
+        if( !paused ) {
+            CinemaService.PauseVideo();
+        }
     }
 
     const videoPlayHandler: ReactEventHandler<HTMLVideoElement> = () => {
-        CinemaService.PlayVideo();
+        if( paused ) {
+            CinemaService.PlayVideo();
+        }
     }
 
-    const videoTimeUpdateHandler: ReactEventHandler<HTMLVideoElement> = ( event ) => {
-        CinemaService.SetTimecode( event.currentTarget.currentTime );
+    const videoTimeUpdateHandler: ReactEventHandler<HTMLVideoElement> = ( e ) => {
+        console.log( e )
+        CinemaService.SetTimecode( e.currentTarget.currentTime );
     }
 
-    return <div className = 'video-container'>
+    const videoContainerCls = 'video-container ' + ( paused ? 'on-pause' : 'on-play' );
+
+    return <div className = { videoContainerCls } onLoad = { () => videoRef.current?.load() }>
         <video
+            controls
+            ref = { videoRef as any }
             id = 'VideoPlayer'
-            src = { src }
+            src = { CinemaService.getVideoSourceUrl() }
             onPause = { videoPauseHandler }
             onPlay = { videoPlayHandler }
-            onTimeUpdate = { videoTimeUpdateHandler }
+            onSeeked = { videoTimeUpdateHandler }
         />
     </div>;
 }

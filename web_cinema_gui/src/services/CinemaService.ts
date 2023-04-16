@@ -1,130 +1,161 @@
 /** Модуль экспортирует компонент с видео-проигрывателем. */
 
-type VideoSourceChangeAction = React.Dispatch<React.SetStateAction<string>>;
-type UserAmountChangeAction = React.Dispatch<React.SetStateAction<number>>;
-type VideoListChangeAction = React.Dispatch<React.SetStateAction<string[]>>;
+/** Тип метода, устанавливаемого состояние React-компонента. */
+type ReactStateSetter<T> = React.Dispatch<React.SetStateAction<T>>
 
 /** Коды ответов, которые могут прийти в WS-соединении. */
 enum WebSocketResponseCode {
-    NewVideoAppeard,
     Play,
     Pause,
     ChangeTimeCode,
-    UserJoined,
-    UserLeft
+    UserListChanged
 }
-
-/** URL сервера. */
-const server = `http://${ window.location.hostname }:80/`;
 
 /** Сервис работы приложения. */
 export class CinemaService {
-    /** Сеттер React-хука для установки источника видео. */
-    static setVideoSourceSetter( setVideoSrc: VideoSourceChangeAction ): void {
-        this._sourceChangeReaction = setVideoSrc;
+    /** Методы устанавливает обработчиков событий изменения состояний комнаты. */
+    static setVideoStateHandlers( onUnpause: Function, onPause: Function, onTimecodeChange: Function ) {
+        this.unpauseEventHandler = onUnpause;
+        this.pauseEventHandler = onPause;
+        this.timecodeChangeEventHandler = onTimecodeChange;
+    }
+
+    /** Метод возвращает URL источника видео-потока.. */
+    static getVideoSourceUrl(): string {
+        return `http://${ window.location.hostname }:${ this.videoServicePort }/videoplayer`;
     }
 
     /** Сеттер React-хука для изменения списка видео для просмотра. */
-    static setVideoListSetter( setVideoList: VideoListChangeAction ): void {
-        this._videListChangeReaction = setVideoList;
+    static setVideoListSetter( setVideoList: ReactStateSetter<string[]> ): void {
+        this.videoListChangeReaction = setVideoList;
     }
 
     /** Сеттер React-хука для изменения количества пользователей. */
-    static setUserAmountSetter( setUserAmount: UserAmountChangeAction ): void {
-        this._userAmountChangeReaction = setUserAmount;
+    static setUserAmountSetter( setUserAmount: ReactStateSetter<number> ): void {
+        this.userAmountChangeReaction = setUserAmount;
     }
 
     /** Метод инициирует подключение по Websocket к серверу. */
-    static async startTransmition(): Promise<void> {
-        this.socket = new WebSocket( `ws://${ window.location.hostname }:80/websocket` );
+    static startTransmition(): void {
+        if( this.socket ) {
+            return;
+        }
 
-        this.socket.onopen = function() {
-            console.log( 'Websocket connection is on!' );
+        this.socket = new WebSocket( `ws://${ window.location.hostname }:${ this.wsServicePort }/websocket` );
+
+        this.socket.onopen = () => {
+            console.log( '[WS] Websocket connection is on!' );
         };
           
         this.socket.onmessage = event => {
-            // Todo В зависимости от полученного кода (ResponseCode), выполнить соотвествующую обработку
+            const data = JSON.parse( event.data );
+            console.log( data )
+
+            switch( data.responseCode as WebSocketResponseCode ) {
+                case WebSocketResponseCode.Play:
+                    this.OnPlay();
+                    break;
+                case WebSocketResponseCode.Pause:
+                    this.OnPause();
+                    break;
+                case WebSocketResponseCode.ChangeTimeCode:
+                    this.OnChangeTimecode( 3 ); // data.timeCode
+                    break;
+                case WebSocketResponseCode.UserListChanged:
+                    this.OnUserListChanged( Date.now() % 10 ); // data.userAmount
+                    break;
+            }
         };
           
         this.socket.onclose = event => {
             if( event.wasClean ) {
-                console.log( `[close] Соединение закрыто чисто, код=${ event.code }, причина=${ event.reason }.` );
+                console.log( `[WS] Соединение закрыто чисто, код=${ event.code }, причина=${ event.reason }.` );
             } else {
-                console.log( '[close] Соединение прервано.' );
+                console.log( '[WS] Соединение прервано.' );
             }
         };
 
-        this.socket.onerror = () => console.log( 'Websocket error appeard!' );
+        this.socket.onerror = () => console.log( '[WS] Websocket error appeard!' );
     }
 
     /** Метод отправляет запрос по websocket'у на установку выбранного момента времени видео. */
     static SetTimecode( timecode: number ): void {
-        this.socket?.send( 'timecode' + timecode );
+        this.sendRequest( this.server + 'timecode', 'POST', JSON.stringify({ timecode }) );
     }
 
     /** Метод отправляет запрос по websocket'у на установку видео на паузу. */
     static PauseVideo(): void {
-        this.socket?.send( 'pause' );
+        this.sendRequest( this.server + 'pause', 'POST' );
     }
 
     /** Метод отправляет запрос по websocket'у на продолжение видео. */
     static PlayVideo(): void {
-        this.socket?.send( 'play' );
-    }
-
-    static async SendVideoFile( videoFile: File ): Promise<void> {
-    }
-
-    /** Обработчик события появления нового видео в списке. */
-    private static async OnNewVideo(): Promise<void> {
+        this.sendRequest( this.server + 'play', 'POST' );
     }
  
     /** Обработчик события продолжения просмотра видео. */
-    private static async OnPlay(): Promise<void> {
+    private static OnPlay(): void {
+        this.unpauseEventHandler?.();
     }
 
     /** Обработчик события установления на паузу. */
-    private static async OnPause(): Promise<void> {
+    private static OnPause(): void {
+        this.pauseEventHandler?.();
     }
 
     /** Обработчик события изменения текущего момента просмотра видео. */
-    private static async OnChangeTimecode(): Promise<void> {
+    private static OnChangeTimecode( timeCode: number ): void {
+        this.timecodeChangeEventHandler?.( timeCode );
     }
 
-    /** Обработчик события входа нового пользователя в комнату. */
-    private static async OnUserJoin(): Promise<void> {
+    /** Обработчик события изменения количества пользователей в комнате. */
+    private static OnUserListChanged( userAmount: number ): void {
+        this.userAmountChangeReaction( userAmount );
     }
 
-    /** Обработчик события выхода пользователя из комнаты. */
-    private static async OnUserLeft(): Promise<void> {
+    /** 
+     * Метод создания и посылки запроса с дальнейшей обработкой ответа.
+     * @param url - URL запроса.
+     * @param [method = 'GET'] - метод запроса.
+     * @param [body] - тело запроса (если необходимо).
+     * */
+    private static async sendRequest( url: string,
+                                      method: string = 'GET',
+                                      body?: BodyInit ): Promise<Record<string, any>> {
+        const response = await fetch( url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body
+        });
+
+        const data = await response.json();
+
+        if( !data?.success ) {
+            throw new Error( 'No data or operation is not success.' );
+        };
+
+        return data;
     }
 
-    private static _videListChangeReaction: VideoListChangeAction;
-    private static _sourceChangeReaction: VideoSourceChangeAction;
-    private static _userAmountChangeReaction: UserAmountChangeAction;
+    /** Порт сервиса обработки HTTP-запросов. */
+    private static readonly httpServicePort = 3001;
+
+    /** Порт сервиса обработки Websocket соединения. */
+    private static readonly wsServicePort = 3002;
+
+    /** Порт сервиса предоставления видео-потока. */
+    private static readonly videoServicePort = 3003;
+
+    /** URL сервера. */
+    private static readonly server = `http://${ window.location.hostname }:${ this.httpServicePort }/`;
+
+    private static unpauseEventHandler: Function;
+    private static pauseEventHandler: Function;
+    private static timecodeChangeEventHandler: Function;
+
+    private static videoListChangeReaction: ReactStateSetter<string[]>;
+    private static userAmountChangeReaction: ReactStateSetter<number>;
     private static socket: WebSocket;
-}
-
-/** 
- * Простая shortcut функция посылки запроса и обработки приходящий данных.
- * @param url - URL запроса.
- * @param [method = 'GET'] - метод запроса.
- * @param [body] - тело запроса (если необходимо).
- * */
-const sendRequest = async ( url: string, method: string = 'GET', body?: BodyInit ) => {
-    const response = await fetch( url, {
-        method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body
-    });
-
-    const data = await response.json();
-
-    if( !data?.success ) {
-        throw new Error( 'No data or operation is not success.' );
-    };
-
-    return data;
 }

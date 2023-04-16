@@ -10,9 +10,11 @@ export const Users: React.FC = () => {
     CinemaService.setUserAmountSetter( setUserAmount );
 
     return <div className = 'VerticalFlex right-container'>
-        <div className = 'right-container__title'>Количество участников</div>
+        <div className = 'right-container__title'>
+            Количество участников
+        </div>
         <div className = 'user-counter' style = {{ padding: 8 }}>
-            {userAmount}
+            { userAmount }
         </div>
     </div>;
 }

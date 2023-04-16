@@ -2,8 +2,6 @@
 
 package-lock.json
 
-/static_service_data
-
 # dependencies
 /node_modules
 /.pnp
