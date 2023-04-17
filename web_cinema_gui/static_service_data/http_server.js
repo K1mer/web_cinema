@@ -1,16 +1,13 @@
 const express = require( 'express' );
 const path = require( 'path' );
-
 const PORT = 3001;
 const app = express();
-
-// const { Kafka } = require( 'kafkajs' );
-
-// const kafka = new Kafka({
-//   clientId: 'web-cinema-http-service',
-//   brokers: [ 'kafka1:9092', 'kafka2:9092' ],
-// });
-
+const { Kafka } = require( 'kafkajs' );
+const kafka = new Kafka({
+   clientId: 'web-cinema-http-service',
+   brokers: [ 'localhost:9092' ],
+ });
+const producer = kafka.producer()
 /** Прослойка для парсинга JSON-объектов. */
 app.use( express.json() );
 
@@ -28,7 +25,14 @@ app.use( '/', express.static( path.join( __dirname, 'build' ) ) );
 /** Продолжить просмотр. */
 app.post( '/play', ( req, res ) => {
   try {
-    // Todo Послать запрос в Kafka
+      await producer.connect()
+      await producer.send({
+          topic: 'PlayTopic',
+          messages: [
+              { value: req },
+          ],
+      })
+      await producer.disconnect()
 
     res.json({
       success: true
@@ -43,7 +47,14 @@ app.post( '/play', ( req, res ) => {
 /** Поставить на паузу. */
 app.post( '/pause', ( req, res ) => {
   try {
-    // Todo Послать запрос в Kafka
+      await producer.connect()
+      await producer.send({
+          topic: 'PauseTopic',
+          messages: [
+              { value: req },
+          ],
+      })
+      await producer.disconnect()
 
     res.json({
       success: true
@@ -58,7 +69,14 @@ app.post( '/pause', ( req, res ) => {
 /** Установить тайм-код. */
 app.post( '/timecode', ( req, res ) => {
   try {
-    // Todo Послать запрос с телом в Kafka
+      await producer.connect()
+      await producer.send({
+          topic: 'TimeTopic',
+          messages: [
+              { value: req },
+          ],
+      })
+      await producer.disconnect()
     // Указать значение, хранимое в req.body.timecode
     console.log( req.body.timecode )
 
