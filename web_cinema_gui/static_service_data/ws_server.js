@@ -1,5 +1,7 @@
-const http = require( 'http' );
 const ws = require( 'ws' );
+const express = require( 'express' );
+const app = express();
+app.use( express.json() );
 
 const PORT = 3002;
 const wss = new ws.Server({ noServer: true });

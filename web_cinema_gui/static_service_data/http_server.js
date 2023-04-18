@@ -23,7 +23,7 @@ app.use( ( _, response, next ) => {
 app.use( '/', express.static( path.join( __dirname, 'build' ) ) );
 
 /** Продолжить просмотр. */
-app.post( '/play', ( req, res ) => {
+app.post( '/play', async ( req, res ) => {
   try {
       await producer.connect()
       await producer.send({
@@ -45,7 +45,7 @@ app.post( '/play', ( req, res ) => {
 });
 
 /** Поставить на паузу. */
-app.post( '/pause', ( req, res ) => {
+app.post( '/pause', async ( req, res ) => {
   try {
       await producer.connect()
       await producer.send({
@@ -67,18 +67,66 @@ app.post( '/pause', ( req, res ) => {
 });
 
 /** Установить тайм-код. */
-app.post( '/timecode', ( req, res ) => {
+app.post( '/timecode', async ( req, res ) => {
   try {
       await producer.connect()
       await producer.send({
           topic: 'TimeTopic',
           messages: [
-              { value: req },
+              { value: req.body.timecode },
           ],
       })
       await producer.disconnect()
     // Указать значение, хранимое в req.body.timecode
     console.log( req.body.timecode )
+
+    res.json({
+      success: true
+    });
+  } catch {
+    res.json({
+      success: false
+    });
+  };
+});
+
+/** Добавить нового клиента по идентификатору */
+app.post( '/addclient', async ( req, res ) => {
+  try {
+      await producer.connect()
+      await producer.send({
+          topic: 'AddClientTopic',
+          messages: [
+              { value: req.body.clientid },
+          ],
+      })
+      await producer.disconnect()
+
+    console.log( req.body.clientid )
+
+    res.json({
+      success: true
+    });
+  } catch {
+    res.json({
+      success: false
+    });
+  };
+});
+
+/** Удалить клиента по его идентификатору */
+app.post( '/deleteclient', async ( req, res ) => {
+  try {
+      await producer.connect()
+      await producer.send({
+          topic: 'DeleteClientTopic',
+          messages: [
+              { value: req.body.clientid },
+          ],
+      })
+      await producer.disconnect()
+
+    console.log( req.body.clientid )
 
     res.json({
       success: true
