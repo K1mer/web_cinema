@@ -29,7 +29,12 @@ app.post( '/play', async ( req, res ) => {
       await producer.send({
           topic: 'PlayTopic',
           messages: [
-              { value: req },
+              { 
+                headevalue: req,
+                headers: {
+                  status: '0'
+                }
+              },
           ],
       })
       await producer.disconnect()
@@ -51,7 +56,12 @@ app.post( '/pause', async ( req, res ) => {
       await producer.send({
           topic: 'PauseTopic',
           messages: [
-              { value: req },
+              { 
+                value: req,
+                headers: {
+                  status: '1'
+                }
+              },
           ],
       })
       await producer.disconnect()
@@ -73,7 +83,12 @@ app.post( '/timecode', async ( req, res ) => {
       await producer.send({
           topic: 'TimeTopic',
           messages: [
-              { value: req.body.timecode },
+              { 
+                value: req.body.timecode,
+                headers: {
+                  status: '2'
+                }
+              },
           ],
       })
       await producer.disconnect()

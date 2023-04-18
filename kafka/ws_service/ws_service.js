@@ -8,6 +8,28 @@ const wss = new ws.Server({ noServer: true });
 
 const webSocketClients = new Set();
 
+app.post( '/play', async ( req, res ) => {
+  console.log('123');
+});
+
+app.post( '/pause', async ( req, res ) => {
+
+});
+
+app.post( '/settimecode', async ( req, res ) => {
+
+});
+
+app.get('/', (req, res) => {
+  wss.handleUpgrade( req, req.socket, Buffer.alloc( 0 ), ( client, _request ) => {
+    webSocketClients.add( client );
+
+    client.onclose = () => {
+      webSocketClients.delete( client );
+    }
+  });
+});
+
 function accept( req, res ) {
   if( !req.headers.upgrade || req.headers.upgrade.toLowerCase() != 'websocket' ) {
     res.end();
@@ -19,17 +41,8 @@ function accept( req, res ) {
     return;
   }
 
-  wss.handleUpgrade( req, req.socket, Buffer.alloc( 0 ), ( client, _request ) => {
-    webSocketClients.add( client );
-
-    client.onclose = () => {
-      webSocketClients.delete( client );
-    }
-  });
+  
 }
-
-// Todo Добавить логику получения запроса из сервиса комнат,
-// после чего послать по WS соотвествующую команду
 
 let i = 0
 setInterval( () => {
@@ -43,10 +56,6 @@ setInterval( () => {
 
 }, 5000 );
 
-if( module.children ) {
-  http.createServer( accept ).listen( PORT, () => {
-    console.log( `Server listening on ${ PORT }.` );
-  });
-} else {
-  exports.accept = accept;
-}
+app.listen( PORT, () => {
+  console.log( `Server listening on ${ PORT }.` );
+});
