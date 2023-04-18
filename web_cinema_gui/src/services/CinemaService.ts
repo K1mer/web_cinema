@@ -41,7 +41,7 @@ export class CinemaService {
             return;
         }
 
-        this.socket = new WebSocket( `ws://${ window.location.hostname }:${ this.wsServicePort }/websocket` );
+        this.socket = new WebSocket( `ws://${ window.location.hostname }:${ this.wsServicePort }/` );
 
         this.socket.onopen = () => {
             console.log( '[WS] Websocket connection is on!' );
