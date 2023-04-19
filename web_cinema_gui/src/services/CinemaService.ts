@@ -44,12 +44,11 @@ export class CinemaService {
         this.socket = new WebSocket( `ws://${ window.location.hostname }:${ this.wsServicePort }/` );
 
         this.socket.onopen = () => {
-            console.log( '[WS] Websocket connection is on!' );
+            console.log( 'Websocket-соединение установлено!' );
         };
           
         this.socket.onmessage = event => {
             const data = JSON.parse( event.data );
-            console.log( data )
 
             switch( data.responseCode as WebSocketResponseCode ) {
                 case WebSocketResponseCode.Play:
@@ -59,23 +58,16 @@ export class CinemaService {
                     this.OnPause();
                     break;
                 case WebSocketResponseCode.ChangeTimeCode:
-                    this.OnChangeTimecode( 3 ); // data.timeCode
+                    this.OnChangeTimecode( data.timeCode );
                     break;
                 case WebSocketResponseCode.UserListChanged:
-                    this.OnUserListChanged( Date.now() % 10 ); // data.userAmount
+                    this.OnUserListChanged( data.userAmount );
                     break;
             }
         };
           
-        this.socket.onclose = event => {
-            if( event.wasClean ) {
-                console.log( `[WS] Соединение закрыто чисто, код=${ event.code }, причина=${ event.reason }.` );
-            } else {
-                console.log( '[WS] Соединение прервано.' );
-            }
-        };
-
-        this.socket.onerror = () => console.log( '[WS] Websocket error appeard!' );
+        this.socket.onclose = () => console.log( 'Websocket-соединение прервано.' );
+        this.socket.onerror = () => console.log( 'Websocket-соединение прервано из-за ошибки.' );
     }
 
     /** Метод отправляет запрос по websocket'у на установку выбранного момента времени видео. */

@@ -35,18 +35,19 @@ export const Video: React.FC = () => {
 
     const videoPauseHandler: ReactEventHandler<HTMLVideoElement> = () => {
         if( !paused ) {
+            videoRef.current?.play();
             CinemaService.PauseVideo();
         }
     }
 
     const videoPlayHandler: ReactEventHandler<HTMLVideoElement> = () => {
         if( paused ) {
+            videoRef.current?.pause();
             CinemaService.PlayVideo();
         }
     }
 
     const videoTimeUpdateHandler: ReactEventHandler<HTMLVideoElement> = ( e ) => {
-        console.log( e )
         CinemaService.SetTimecode( e.currentTarget.currentTime );
     }
 

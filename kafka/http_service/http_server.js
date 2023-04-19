@@ -1,15 +1,20 @@
 const express = require( 'express' );
 const path = require( 'path' );
-const PORT = 3001;
 const app = express();
-const { Kafka, CompressionTypes, logLevel } = require('kafkajs');
-const kafka = new Kafka({
-   clientId: 'web-cinema-http-service',
-   brokers: [ 'localhost:9092' ],
- });
-const producer = kafka.producer()
+const { Kafka } = require('kafkajs');
+
+const PORT = 3001;
+
+const producer = new Kafka({
+  clientId: 'web-cinema-http-service',
+  brokers: [ 'localhost:9092' ],
+ }).producer();
+
 /** Прослойка для парсинга JSON-объектов. */
 app.use( express.json() );
+
+/** Пересылка статических файлов при GET запросе "/". */
+app.use( '/', express.static( path.join( __dirname, 'build' ) ) );
 
 /** Установка заголовков перед обработкой запросов. */
 app.use( ( _, response, next ) => {
@@ -19,27 +24,21 @@ app.use( ( _, response, next ) => {
   next();
 });
 
-/** Пересылка статических файлов при GET запросе "/". */
-app.use( '/', express.static( path.join( __dirname, 'build' ) ) );
-
-const getRandomNumber = () => Math.round(Math.random(10) * 1000)
-const createMessage = num => ({
-  key: `key-${num}`,
-  value: `value-${num}-${new Date().toISOString()}`,
-})
-
+/** Инициализация Kafka-producer. */
 const initProducers = async () => {
   await producer.connect();
 };
 initProducers();
 
 /** Продолжить просмотр. */
-app.post( '/play', async ( req, res ) => {
+app.post( '/play', async ( _, res ) => {
   try {
       producer.send({
           topic: 'VideoTopic',
           messages: [{
-            value: Buffer.from(JSON.stringify({code: 0}))
+            value: Buffer.from( JSON.stringify({
+              code: 0
+            }) )
           }],
       });
 
@@ -54,12 +53,14 @@ app.post( '/play', async ( req, res ) => {
 });
 
 /** Поставить на паузу. */
-app.post( '/pause', async ( req, res ) => {
+app.post( '/pause', async ( _, res ) => {
   try {
     producer.send({
       topic: 'VideoTopic',
       messages: [{
-        value: Buffer.from(JSON.stringify({code: 1}))
+        value: Buffer.from( JSON.stringify({
+          code: 1
+        }) )
       }],
      });
 
@@ -79,7 +80,9 @@ app.post( '/timecode', async ( req, res ) => {
     producer.send({
       topic: 'VideoTopic',
       messages: [{
-        value: Buffer.from(JSON.stringify({code: 2, timecode: req.body.timecode}))
+        value: Buffer.from( JSON.stringify({
+          code: 2, timecode: req.body.timecode
+        }) )
       }],
     });
 
@@ -93,17 +96,15 @@ app.post( '/timecode', async ( req, res ) => {
   };
 });
 
-/** Добавить нового клиента по идентификатору */
+/** Todo Добавить нового клиента по идентификатору. */
 app.post( '/addclient', async ( req, res ) => {
   try {
-      await producer.connect()
-      await producer.send({
-          topic: 'AddClientTopic',
-          messages: [
-              { value: req.body.clientid },
-          ],
-      })
-      await producer.disconnect()
+    producer.send({
+      topic: 'AddClientTopic',
+      messages: [
+        { value: req.body.clientid },
+      ],
+    })
 
     console.log( req.body.clientid )
 
@@ -117,17 +118,15 @@ app.post( '/addclient', async ( req, res ) => {
   };
 });
 
-/** Удалить клиента по его идентификатору */
+/** Todo Удалить клиента по его идентификатору. */
 app.post( '/deleteclient', async ( req, res ) => {
   try {
-      await producer.connect()
-      await producer.send({
-          topic: 'DeleteClientTopic',
-          messages: [
-              { value: req.body.clientid },
-          ],
-      })
-      await producer.disconnect()
+    producer.send({
+      topic: 'DeleteClientTopic',
+      messages: [
+        { value: req.body.clientid },
+      ],
+    })
 
     console.log( req.body.clientid )
 

@@ -14,7 +14,7 @@ export const Users: React.FC = () => {
             Количество участников
         </div>
         <div className = 'user-counter' style = {{ padding: 8 }}>
-            { userAmount }
+            Working
         </div>
     </div>;
 }
