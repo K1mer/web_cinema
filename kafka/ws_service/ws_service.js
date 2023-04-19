@@ -24,8 +24,9 @@ app.post( '/pause', async () => {
 
 app.post( '/settimecode', async ( req ) => {
   console.log( '[WS] Request settimecode.' );
+  console.log(req);
   webSocketClients.forEach( client =>
-    client.send( JSON.stringify({ responseCode: 2 }) )
+    client.send( JSON.stringify({ responseCode: 2, timeCode: req.body.timecode}) )
   );
 });
 
