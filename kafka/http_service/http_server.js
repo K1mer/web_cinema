@@ -2,7 +2,7 @@ const express = require( 'express' );
 const path = require( 'path' );
 const PORT = 3001;
 const app = express();
-const { Kafka } = require( 'kafkajs' );
+const { Kafka, CompressionTypes, logLevel } = require('kafkajs');
 const kafka = new Kafka({
    clientId: 'web-cinema-http-service',
    brokers: [ 'localhost:9092' ],
@@ -22,22 +22,26 @@ app.use( ( _, response, next ) => {
 /** Пересылка статических файлов при GET запросе "/". */
 app.use( '/', express.static( path.join( __dirname, 'build' ) ) );
 
+const getRandomNumber = () => Math.round(Math.random(10) * 1000)
+const createMessage = num => ({
+  key: `key-${num}`,
+  value: `value-${num}-${new Date().toISOString()}`,
+})
+
+const initProducers = async () => {
+  await producer.connect();
+};
+initProducers();
+
 /** Продолжить просмотр. */
 app.post( '/play', async ( req, res ) => {
   try {
-      await producer.connect()
-      await producer.send({
-          topic: 'PlayTopic',
-          messages: [
-              { 
-                headevalue: req,
-                headers: {
-                  status: '0'
-                }
-              },
-          ],
-      })
-      await producer.disconnect()
+      producer.send({
+          topic: 'VideoTopic',
+          messages: [{
+            value: Buffer.from(JSON.stringify({code: 0}))
+          }],
+      });
 
     res.json({
       success: true
@@ -52,19 +56,12 @@ app.post( '/play', async ( req, res ) => {
 /** Поставить на паузу. */
 app.post( '/pause', async ( req, res ) => {
   try {
-      await producer.connect()
-      await producer.send({
-          topic: 'PauseTopic',
-          messages: [
-              { 
-                value: req,
-                headers: {
-                  status: '1'
-                }
-              },
-          ],
-      })
-      await producer.disconnect()
+    producer.send({
+      topic: 'VideoTopic',
+      messages: [{
+        value: Buffer.from(JSON.stringify({code: 1}))
+      }],
+     });
 
     res.json({
       success: true
@@ -79,21 +76,12 @@ app.post( '/pause', async ( req, res ) => {
 /** Установить тайм-код. */
 app.post( '/timecode', async ( req, res ) => {
   try {
-      await producer.connect()
-      await producer.send({
-          topic: 'TimeTopic',
-          messages: [
-              { 
-                value: req.body.timecode,
-                headers: {
-                  status: '2'
-                }
-              },
-          ],
-      })
-      await producer.disconnect()
-    // Указать значение, хранимое в req.body.timecode
-    console.log( req.body.timecode )
+    producer.send({
+      topic: 'VideoTopic',
+      messages: [{
+        value: Buffer.from(JSON.stringify({code: 2, timecode: req.body.timecode}))
+      }],
+    });
 
     res.json({
       success: true

@@ -9,15 +9,24 @@ const wss = new ws.Server({ noServer: true });
 const webSocketClients = new Set();
 
 app.post( '/play', async ( req, res ) => {
-  console.log('123');
+  console.log('request play');
+  webSocketClients.forEach( client => {
+    client.send( JSON.stringify({ responseCode: 0 }) );
+  });
 });
 
 app.post( '/pause', async ( req, res ) => {
-
+  console.log('request pause');
+  webSocketClients.forEach( client => {
+    client.send( JSON.stringify({ responseCode: 1 }) );
+  });
 });
 
 app.post( '/settimecode', async ( req, res ) => {
-
+  console.log('request settimecode');
+  webSocketClients.forEach( client => {
+    client.send( JSON.stringify({ responseCode: 2 }) );
+  });
 });
 
 app.get('/', (req, res) => {
@@ -44,17 +53,17 @@ function accept( req, res ) {
   
 }
 
-let i = 0
-setInterval( () => {
-  const responseCode = ( i++ ) % 3;
+//let i = 0
+// setInterval( () => {
+//   const responseCode = ( i++ ) % 3;
 
-  webSocketClients.forEach( client => {
-    client.send( JSON.stringify({ responseCode }) );
-  });
+//   webSocketClients.forEach( client => {
+//     client.send( JSON.stringify({ responseCode }) );
+//   });
 
-  console.log( webSocketClients.size )
+//   console.log( webSocketClients.size )
 
-}, 5000 );
+// }, 5000 );
 
 app.listen( PORT, () => {
   console.log( `Server listening on ${ PORT }.` );
