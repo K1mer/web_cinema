@@ -1,0 +1,49 @@
+version: "3"
+services:
+    zookeeper:
+        image: zookeeper
+        container_name: zookeeper
+        ports:
+            - "2181:2181"
+        environment:
+            - ALLOW_ANONYMOUS_LOGIN=yes
+    kafka:
+        image: wurstmeister/kafka
+        container_name: kafka
+        ports:
+            - "9092:9092"
+        environment:      
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_LISTENERS: 'PLAINTEXT://:9092'         
+            ALLOW_PLAINTEXT_LISTENER: 'yes'
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_CREATE_TOPICS: 'VideoTopic:1:1,UserTopic:1:1'
+        depends_on:
+            - zookeeper
+    http_server:
+        build: 
+            context: ./http_service
+            dockerfile: Dockerfile
+        ports:
+            - "3001:3001"
+        container_name: http_server
+    ws_server:
+        build: 
+            context: ./ws_service
+            dockerfile: Dockerfile
+        ports:
+            - "3002:3002"
+        container_name: ws_server
+    room_server:
+        build: 
+            context: ./room_service
+            dockerfile: Dockerfile
+        container_name: room_server
+    video_server:
+        build: 
+            context: ./video_service
+            dockerfile: Dockerfile
+        ports:
+            - "3003:3003"
+        container_name: video_server

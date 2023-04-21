@@ -7,7 +7,7 @@ const PORT = 3001;
 
 const producer = new Kafka({
   clientId: 'web-cinema-http-service',
-  brokers: [ 'localhost:9092' ],
+  brokers: [ 'kafka:9092' ],
  }).producer();
 
 /** Прослойка для парсинга JSON-объектов. */

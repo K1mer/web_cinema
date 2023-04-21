@@ -9,7 +9,7 @@ const wss = new ws.Server({ noServer: true });
 const webSocketClients = new Set();
 
 app.post( '/play', async () => {
-  console.log('request play');
+  console.log( '[WS] Request play.' );
   webSocketClients.forEach( client => {
     client.send( JSON.stringify({ responseCode: 0 }) );
   });
@@ -24,7 +24,6 @@ app.post( '/pause', async () => {
 
 app.post( '/settimecode', async ( req ) => {
   console.log( '[WS] Request settimecode.' );
-  console.log(req);
   webSocketClients.forEach( client =>
     client.send( JSON.stringify({ responseCode: 2, timeCode: req.body.timecode}) )
   );

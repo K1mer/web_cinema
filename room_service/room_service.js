@@ -1,12 +1,12 @@
 const { Kafka } = require('kafkajs')
-var request = require('request');
-const addressWebsockerService = '';
-const uriWebsockerService = 'http://127.0.0.1:3002';
-var clients = [];
+const request = require('request');
+
+const uriWebsockerService = 'http://ws_server:3002';
+const clients = [];
 
 const kafka = new Kafka({
   clientId: 'roomService',
-  brokers: ['127.0.0.1:9092'],
+  brokers: ['kafka:9092'],
 })
 
 initConsumers();
@@ -22,12 +22,12 @@ async function initConsumers(){
       switch (paramsMessage.code) {
         case 0:
           request.post({url: uriWebsockerService + '/play'});
-          console.log('request play');
+          console.log( '[RS] Request Play.' );
           break;
 
         case 1:
           request.post({url: uriWebsockerService + '/pause'});
-          console.log('request pause');
+          console.log( '[RS] Request Pause.' );
           break;
 
         case 2:
@@ -35,7 +35,7 @@ async function initConsumers(){
             url: uriWebsockerService + '/settimecode', 
             method: 'POST',
             json: {timecode: paramsMessage.timecode}});  
-          console.log('request settimecode');
+          console.log( '[RS] Request Settimecode.' );
           break;
       }
     },
